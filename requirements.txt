@@ -1,0 +1,11 @@
+kaggle
+matplotlib
+numpy
+pandas
+Pillow
+python-dotenv
+scikit-image
+scikit-learn
+seaborn
+tqdm
+transformers
