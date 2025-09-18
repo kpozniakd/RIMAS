@@ -1,17 +1,48 @@
-TRAIN_CSV_PATH = "../data/raw/dataset-rimes/RIMES-2011-Lines/Train/train_labels.csv"
-TEST_CSV_PATH = "../data/raw/dataset-rimes/RIMES-2011-Lines/Test/test_labels.csv"
-TRAIN_IMG_DIR = "../data/raw/dataset-rimes/RIMES-2011-Lines/Train/Images"
-TEST_IMG_DIR = "../data/raw/dataset-rimes/RIMES-2011-Lines/Test/Images"
-OUTPUT_WORD_CSV_PATH = "../data/processed"
+from dataclasses import dataclass
+from typing import Tuple
+from pathlib import Path
 
-IMAGE_SIZE = 384
-MAX_TEXT_LENGTH = 128
-DEFAULT_TOP_N = 30
-DEFAULT_IMG_COUNT = 5
-BLANK_STD_THRESHOLD = 5
-SHARP_LAPLACIAN_THRESHOLD = 300
-NOISE_STD_MEAN_THRESHOLD = 0.7
-CONTRAST_DIFF_THRESHOLD = 30
-TARGET_HEIGHT = 64
-WINDOW_WIDTH = 30
-STRIDE_SIZE = 10
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+@dataclass
+class Config:
+    # Paths
+    TRAIN_CSV_PATH: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/train_labels.csv"
+    TEST_CSV_PATH: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/test_labels.csv"
+    TRAIN_IMG_DIR: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/Images"
+    TEST_IMG_DIR: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/Images"
+    OUTPUT_WORD_CSV_PATH: Path = BASE_DIR / "data/processed"
+
+    IMAGE_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/weights/image_embeddings"
+    TEXT_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/weights/text_embeddings"
+    WORD_TEXT_PATH: Path = BASE_DIR / "data/processed/weights/word_text"
+    WORD_PARENTS_PATH: Path = BASE_DIR / "data/processed/weights/word_parents"
+    WORD_BBOXES_PATH: Path = BASE_DIR / "data/processed/weights/word_bboxes"
+    DATASET_PATH: Path = BASE_DIR / "data/processed/letters"
+
+    # Image / text sizes
+    IMAGE_SIZE: int = 384
+    TARGET_SIZE: Tuple[int, int] = (400, 150)
+    MAX_TEXT_LENGTH: int = 128
+
+    # Defaults
+    DEFAULT_TOP_N: int = 30
+    DEFAULT_IMG_COUNT: int = 5
+
+    # Quality thresholds
+    BLANK_STD_THRESHOLD: float = 5
+    SHARP_LAPLACIAN_THRESHOLD: float = 300
+    NOISE_STD_MEAN_THRESHOLD: float = 0.7
+    CONTRAST_DIFF_THRESHOLD: float = 30
+
+    # Window parameters
+    TARGET_HEIGHT: int = 64
+    WINDOW_WIDTH: int = 30
+    STRIDE_SIZE: int = 10
+
+
+# if __name__ == "__main__":
+    # config = Config()
+    # print(config.DATASET_PATH)
+    # print(config.TRAIN_CSV_PATH)
