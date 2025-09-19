@@ -4,10 +4,11 @@ from collections import Counter
 import string
 import unicodedata
 
+
 def analyze_character_frequency(df: pd.DataFrame) -> Tuple[Dict[str, int], ...]:
     """Classify and count characters by category."""
     char_freq = Counter()
-    for text in df['Contents'].astype(str):
+    for text in df["Contents"].astype(str):
         char_freq.update(text)
 
     lowercase, uppercase, digits, punct, spaces, others = {}, {}, {}, {}, {}, {}

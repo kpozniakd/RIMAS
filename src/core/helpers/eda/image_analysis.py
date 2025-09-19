@@ -3,8 +3,10 @@ import os
 import matplotlib.pyplot as plt
 from PIL import Image
 
+
 def analyze_image_dimensions(df: pd.DataFrame, img_dir: str) -> None:
     """Plot image width vs height and aspect ratios."""
+
     def get_size(name):
         try:
             with Image.open(os.path.join(img_dir, name)) as img:
@@ -22,10 +24,12 @@ def analyze_image_dimensions(df: pd.DataFrame, img_dir: str) -> None:
     plt.grid(True)
     plt.show()
 
+
 def check_channels(file_name: str, img_dir: str) -> str:
     """Get channel mode (e.g. RGB, L) of image."""
     with Image.open(os.path.join(img_dir, file_name)) as img:
         return img.mode
+
 
 def analyze_channel_distribution(df: pd.DataFrame, img_dir: str) -> pd.Series:
     """Return counts of image modes across dataset."""
@@ -49,5 +53,5 @@ def calculate_thickness_outliers(df: pd.DataFrame) -> float:
 
     print(f"Number of outliers: {num_outliers} з {total}")
     print(f"Percentage of outliers : {percentage:.2f}%")
-    
+
     return percentage

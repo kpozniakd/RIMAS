@@ -14,7 +14,7 @@ def plot_text_length_distribution(df: pd.DataFrame) -> None:
     """Plot histogram of line lengths in characters."""
     df["Len of content"] = df["Contents"].apply(len)
     plt.figure(figsize=(10, 6))
-    plt.hist(df["Len of content"], bins=30, edgecolor='black')
+    plt.hist(df["Len of content"], bins=30, edgecolor="black")
     plt.title("Distribution of text string lengths (in chars)")
     plt.xlabel("Number of chars in a line")
     plt.ylabel("Number of examples")
@@ -26,10 +26,14 @@ def plot_text_length_distribution(df: pd.DataFrame) -> None:
 def word_line_distribution(single_count: int, multi_count: int) -> None:
     """Visual comparison of single vs multi-word lines."""
     plt.figure(figsize=(6, 4))
-    plt.bar(["Single Word", "Multiple Words"], [single_count, multi_count], color=['skyblue', 'salmon'])
+    plt.bar(
+        ["Single Word", "Multiple Words"],
+        [single_count, multi_count],
+        color=["skyblue", "salmon"],
+    )
     plt.title("Single Word vs Multiple Words in Text")
     plt.ylabel("Number of Images")
-    plt.grid(True, axis='y')
+    plt.grid(True, axis="y")
     plt.tight_layout()
     plt.show()
 
@@ -37,7 +41,7 @@ def word_line_distribution(single_count: int, multi_count: int) -> None:
 def analyze_word_frequency(df: pd.DataFrame, top_n: int = 30) -> None:
     """Display most frequent words in the dataset."""
     word_freq = Counter()
-    for text in df['Contents'].astype(str):
+    for text in df["Contents"].astype(str):
         word_freq.update(text.split())
     words, freqs = zip(*word_freq.most_common(top_n))
 
@@ -51,26 +55,32 @@ def analyze_word_frequency(df: pd.DataFrame, top_n: int = 30) -> None:
     plt.tight_layout()
     plt.show()
 
+
 def show_sample_images(df: pd.DataFrame, img_dir: str, n: int = 5) -> None:
     """Visualize first N image-label pairs."""
     plt.figure(figsize=(6, 2 * n))
     for i in range(n):
-        path = os.path.join(img_dir, df.iloc[i]['Filenames'])
-        label = df.iloc[i]['Contents']
+        path = os.path.join(img_dir, df.iloc[i]["Filenames"])
+        label = df.iloc[i]["Contents"]
         img = Image.open(path)
         plt.subplot(n, 1, i + 1)
-        plt.imshow(img, cmap='gray')
+        plt.imshow(img, cmap="gray")
         plt.title(f"'{label}'")
-        plt.axis('off')
+        plt.axis("off")
     plt.tight_layout()
     plt.show()
 
-def analyze_token_lengths(df: pd.DataFrame, processor: TrOCRProcessor, max_length: int = 128) -> None:
+
+def analyze_token_lengths(
+    df: pd.DataFrame, processor: TrOCRProcessor, max_length: int = 128
+) -> None:
     """Plot distribution of tokenized sequence lengths."""
-    token_lengths = df["Contents"].apply(lambda t: len(processor.tokenizer(t).input_ids))
+    token_lengths = df["Contents"].apply(
+        lambda t: len(processor.tokenizer(t).input_ids)
+    )
     over_limit = (token_lengths > max_length).sum()
 
-    plt.hist(token_lengths, bins=30, edgecolor='black')
+    plt.hist(token_lengths, bins=30, edgecolor="black")
     plt.title("Distribution of tokenized text lengths")
     plt.xlabel("Token count")
     plt.ylabel("Number of samples")
@@ -78,7 +88,10 @@ def analyze_token_lengths(df: pd.DataFrame, processor: TrOCRProcessor, max_lengt
     plt.tight_layout()
     plt.show()
 
-    print(f"Samples over max_length ({max_length}): {over_limit} / {len(df)} ({over_limit / len(df) * 100:.2f}%)")
+    print(
+        f"Samples over max_length ({max_length}): {over_limit} / {len(df)} ({over_limit / len(df) * 100:.2f}%)"
+    )
+
 
 def analyze_word_count_type(df: pd.DataFrame) -> None:
     """Analyze lines that contain one word vs multiple."""
@@ -87,10 +100,13 @@ def analyze_word_count_type(df: pd.DataFrame) -> None:
     multiple = (df["word_count"] > 1).sum()
     word_line_distribution(single, multiple)
 
+
 import matplotlib.pyplot as plt
 
 
 def load_and_process_images_from_dir(directory, exts=(".png", ".jpg", ".jpeg")):
+    """Scan a directory for images, binarize each, estimate stroke thickness,
+    and return (filenames, grayscale images, thicknesses)."""
     filenames, images, thicknesses = [], [], []
 
     for fname in tqdm(os.listdir(directory), desc="Check images"):
@@ -108,7 +124,10 @@ def load_and_process_images_from_dir(directory, exts=(".png", ".jpg", ".jpeg")):
 
     return filenames, images, thicknesses
 
+
 def estimate_stroke_thickness(binary_img):
+    """Estimate average stroke thickness as (foreground area / skeleton length);
+    auto-inverts if foreground is light on dark."""
     if binary_img.mean() > 127:
         binary_img = cv2.bitwise_not(binary_img)
     binary = (binary_img > 0).astype(np.uint8)
@@ -119,17 +138,16 @@ def estimate_stroke_thickness(binary_img):
         return 0
     return area_original / area_skeleton
 
+
 def plot_top_thickest_lines(img_dir: str, n: int = 5) -> None:
     """Show N images with thickest lines"""
     filenames, images, thicknesses = load_and_process_images_from_dir(img_dir)
-    df_lines = pd.DataFrame({
-    "filename": filenames,
-    "image": images,
-    "thickness": thicknesses
-    })
+    df_lines = pd.DataFrame(
+        {"filename": filenames, "image": images, "thickness": thicknesses}
+    )
     df_lines["thickness"] = df_lines["image"].apply(estimate_stroke_thickness)
     df_top = df_lines.sort_values("thickness", ascending=False).head(n)
-    
+
     plt.figure(figsize=(3 * n, 4))
     for i, row in enumerate(df_top.itertuples(), 1):
         plt.subplot(1, n, i)
@@ -145,7 +163,9 @@ def plot_top_thickest_lines(img_dir: str, n: int = 5) -> None:
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
 
-    outliers = (df_lines["thickness"] < lower_bound) | (df_lines["thickness"] > upper_bound)
+    outliers = (df_lines["thickness"] < lower_bound) | (
+        df_lines["thickness"] > upper_bound
+    )
 
     num_outliers = outliers.sum()
     total = len(df_lines)
@@ -153,11 +173,12 @@ def plot_top_thickest_lines(img_dir: str, n: int = 5) -> None:
 
     print(f"Number of outliers: {num_outliers} з {total}")
     print(f"% of outliers: {percentage_outliers:.2f}%")
-    
+
 
 def compare_croped_img(words_df, words_df_normalized, i: int):
+    """Side-by-side visualization of original vs cropped/normalized word image for index i."""
     fig, axes = plt.subplots(1, 2)
-    fig.patch.set_facecolor('lightgray')
+    fig.patch.set_facecolor("lightgray")
 
     axes[0].imshow(words_df["image"].iloc[i], cmap="gray")
     axes[0].set_title("Original")
@@ -169,4 +190,3 @@ def compare_croped_img(words_df, words_df_normalized, i: int):
 
     plt.tight_layout()
     plt.show()
-

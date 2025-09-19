@@ -7,6 +7,7 @@ import seaborn as sns
 from tqdm import tqdm
 import pandas as pd
 
+
 def estimate_stroke_thickness(binary_img):
     if binary_img.mean() > 127:
         binary_img = cv2.bitwise_not(binary_img)
@@ -17,6 +18,7 @@ def estimate_stroke_thickness(binary_img):
     if area_skeleton == 0:
         return 0
     return area_original / area_skeleton
+
 
 def load_and_process_images_from_dir(directory, exts=(".png", ".jpg", ".jpeg")):
     filenames, images, thicknesses = [], [], []
@@ -42,18 +44,18 @@ def remove_top_black_rows(img):
         img = img[1:]
     return img
 
+
 def estimate_cleaned_thickness(img):
     cleaned = remove_top_black_rows(img)
     _, binary = cv2.threshold(cleaned, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return estimate_stroke_thickness(binary), cleaned
 
+
 def clean_data(df: pd.DataFrame, img_dir: str):
     filenames, images, thicknesses = load_and_process_images_from_dir(img_dir)
-    df_lines = pd.DataFrame({
-        "filename": filenames,
-        "image": images,
-        "thickness": thicknesses
-    })
+    df_lines = pd.DataFrame(
+        {"filename": filenames, "image": images, "thickness": thicknesses}
+    )
     thicknesses_cleaned = []
     images_cleaned = []
 
@@ -62,11 +64,13 @@ def clean_data(df: pd.DataFrame, img_dir: str):
         thicknesses_cleaned.append(thickness)
         images_cleaned.append(cleaned_img)
 
-    df_lines_cleaned = pd.DataFrame({
-        "filename": df_lines["filename"],
-        "image": images_cleaned,
-        "thickness": thicknesses_cleaned
-    })
+    df_lines_cleaned = pd.DataFrame(
+        {
+            "filename": df_lines["filename"],
+            "image": images_cleaned,
+            "thickness": thicknesses_cleaned,
+        }
+    )
     Q1 = df_lines_cleaned["thickness"].quantile(0.25)
     Q3 = df_lines_cleaned["thickness"].quantile(0.75)
     IQR = Q3 - Q1
@@ -74,7 +78,9 @@ def clean_data(df: pd.DataFrame, img_dir: str):
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
 
-    outliers = (df_lines_cleaned["thickness"] < lower_bound) | (df_lines_cleaned["thickness"] > upper_bound)
+    outliers = (df_lines_cleaned["thickness"] < lower_bound) | (
+        df_lines_cleaned["thickness"] > upper_bound
+    )
 
     num_outliers = outliers.sum()
     total = len(df_lines_cleaned)
@@ -82,14 +88,14 @@ def clean_data(df: pd.DataFrame, img_dir: str):
 
     print(f"Number of outliers: {num_outliers} з {total}")
     print(f"% of outliers: {percentage_outliers:.2f}%")
-    df_merged = pd.merge(df, df_lines_cleaned,
-                     left_on="Filenames",
-                     right_on="filename",
-                     how="inner")
+    df_merged = pd.merge(
+        df, df_lines_cleaned, left_on="Filenames", right_on="filename", how="inner"
+    )
 
     df_merged.drop(columns=["filename"], inplace=True)
 
     return df_merged
+
 
 def build_image_label_dataset(df: pd.DataFrame, img_dir: str) -> pd.DataFrame:
     """
@@ -110,8 +116,4 @@ def build_image_label_dataset(df: pd.DataFrame, img_dir: str) -> pd.DataFrame:
         labels.append(row["Contents"])
         filenames.append(row["Filenames"])
 
-    return pd.DataFrame({
-        "image": images,
-        "label": labels, 
-        "filename": filenames
-    })
+    return pd.DataFrame({"image": images, "label": labels, "filename": filenames})
