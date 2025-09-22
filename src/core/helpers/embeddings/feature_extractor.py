@@ -203,7 +203,6 @@ class FeatureExtractor:
         # Process data if not in load mode
         if not load_flag:
             self._process_image_text_pairs()
-            # self.dimensionality_reduction()
             self.save_embeddings(
                 image_embeddings_path=image_embeddings_path,
                 text_embeddings_path=text_embeddings_path
@@ -213,21 +212,6 @@ class FeatureExtractor:
                 image_embeddings_path=image_embeddings_path,
                 text_embeddings_path=text_embeddings_path
             )
-
-    # def dimensionality_reduction(self, latent_dim: int = 400):
-    #     """Method for dimensionality reduction."""
-    #     if not self.image_embeddings_list or not self.text_embeddings_list:
-    #         raise ValueError("Image and text embeddings must be loaded first.")
-
-    #     image_embeddings_matrix = np.array(self.image_embeddings_list)
-
-    #     if image_embeddings_matrix.shape[1] > latent_dim:
-    #         pca_image = PCA(n_components=latent_dim)
-    #         self.reduced_image_embeddings_list = pca_image.fit_transform(image_embeddings_matrix)
-    #     else:
-    #         self.reduced_image_embeddings_list = image_embeddings_matrix
-
-    #     logger.debug(f"Reduced image embeddings shape: {self.reduced_image_embeddings_list.shape}")
 
     def save_embeddings(self, image_embeddings_path: str, text_embeddings_path: str) -> None:
         """Method for saving embeddings."""
@@ -248,8 +232,8 @@ class FeatureExtractor:
     def _load_embeddings(self, image_embeddings_path: str, text_embeddings_path: str) -> None:
         """Method for loading embeddings."""
         try:
-            self.image_embeddings_list = np.load(f"{image_embeddings_path}.npz")["image"]
-            self.text_embeddings_list = np.load(f"{text_embeddings_path}.npz")["text"]
+            self.image_embeddings_list = np.load(f"{image_embeddings_path}")["image"]
+            self.text_embeddings_list = np.load(f"{text_embeddings_path}")["text"]
 
             logger.info(f"Embeddings loaded from {image_embeddings_path} and {text_embeddings_path} successfully.")
         except Exception as e:
@@ -263,10 +247,7 @@ class FeatureExtractor:
                     data_point["image_path"], self.target_size
                 )
 
-                # Debug output
-                logger.debug(f"Processing: {data_point['text']}")
-
-                # ImageProcessor.visualize_image(binary_image)
+                logger.info(f"Processing text-image pair: {idx}")
 
                 image_embedding = self.image_encoder.encode_image(binary_image)
                 text_embedding = self.text_encoder.encode_text(data_point["text"])

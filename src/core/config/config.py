@@ -14,8 +14,8 @@ class Config:
     TEST_IMG_DIR: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/Images"
     OUTPUT_WORD_CSV_PATH: Path = BASE_DIR / "data/processed"
 
-    IMAGE_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/words/weights/image_embeddings"
-    TEXT_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/words/weights/text_embeddings"
+    IMAGE_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/words/weights/image_embeddings.npz"
+    TEXT_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/words/weights/text_embeddings.npz"
     WORD_TEXT_PATH: Path = BASE_DIR / "data/processed/weights/word_text"
     WORD_PARENTS_PATH: Path = BASE_DIR / "data/processed/weights/word_parents"
     WORD_BBOXES_PATH: Path = BASE_DIR / "data/processed/weights/word_bboxes"
