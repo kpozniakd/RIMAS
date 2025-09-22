@@ -39,7 +39,7 @@ class ImageProcessor:
 
     @staticmethod
     def preprocess_image(
-        image_path: str, 
+        image_path: str,
         target_size: Tuple[int, int]
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Load and preprocess raw image."""
@@ -92,77 +92,30 @@ class DataLoader:
             logger.error(f"Dataset path {dataset_path} does not exist")
             return data_buffer
 
-        for letter_category in os.listdir(dataset_path):
-            letter_dir = dataset_path / letter_category
+        annotation_path = dataset_path / "words.json"
 
-            if not letter_dir.is_dir():
+        with open(annotation_path, "r", encoding="utf-8") as file:
+            annotations = json.load(file)
+
+        words_map = {
+            Path(entry["filename"]).name: entry["label"]
+            for entry in annotations.get("words", [])
+        }
+
+        word_dir = dataset_path / "word"
+        for image_name in os.listdir(word_dir):
+            if not image_name.lower().endswith((".png", ".jpg", ".jpeg")):
                 continue
 
-            letter_name = letter_category.split('_')[0]
-            annotation_path = letter_dir / f"{letter_name}_dataset.json"
-
-            if not annotation_path.exists():
-                logger.warning(f"Annotation file {annotation_path} not found")
-                continue
-
-            DataLoader._process_annotation_file(annotation_path, letter_dir, letter_name, data_buffer)
+            if image_name in words_map:
+                image_path = word_dir / image_name
+                data_buffer.append({
+                    "image_path": str(image_path),
+                    "text": words_map[image_name]
+                })
 
         logger.info(f"Loaded {len(data_buffer)} text-image pairs")
         return data_buffer
-
-    @staticmethod
-    def _process_annotation_file(
-        annotation_path: Path, 
-        letter_dir: Path, 
-        letter_name: str, 
-        data_buffer: List[Dict]
-    ) -> None:
-        """Process a single annotation file."""
-        try:
-            with open(annotation_path, 'r', encoding='utf-8') as file:
-                annotations = json.load(file)
-
-                DataLoader._process_annotation_section(
-                    annotations, "with", letter_dir, letter_name, data_buffer, contains=True
-                )
-                DataLoader._process_annotation_section(
-                    annotations, "without", letter_dir, letter_name, data_buffer, contains=False
-                )
-
-        except (json.JSONDecodeError, KeyError, IOError) as e:
-            logger.error(f"Error processing {annotation_path}: {e}")
-
-    @staticmethod
-    def _process_annotation_section(
-        annotations: Dict,
-        section_key: str,
-        letter_dir: Path,
-        letter_name: str,
-        data_buffer: List[Dict],
-        contains: bool
-    ) -> None:
-        """Process a specific section of annotations."""
-        if section_key in annotations:
-            for obj in annotations[section_key]:
-                image_filename = obj.get("file_name")
-                text_annotation = obj.get("label", "")
-
-                if image_filename:
-                    image_path = DataLoader._construct_image_path(letter_dir, image_filename)
-                    data_buffer.append({
-                        "image_path": str(image_path),
-                        "text": text_annotation,
-                        "class": letter_name,
-                        "contains": contains
-                    })
-
-    @staticmethod
-    def _construct_image_path(letter_dir: Path, image_filename: str) -> Path:
-        """Construct full image path from relative filename."""
-        if "/" in image_filename:
-            relative_part = "/".join(image_filename.split("/")[-2:])
-            return letter_dir / relative_part
-        return letter_dir / image_filename
 
 
 class ImageEncoder:
@@ -171,19 +124,23 @@ class ImageEncoder:
         pass
 
     def encode_image(self, image: np.ndarray) -> np.ndarray:
-        """Method for encoding image data by using HOG (Histogram of Oriented Gradients) approach."""
-        hog_features = hog(
-            image,
-            orientations=9,
-            pixels_per_cell=(8,8),
-            cells_per_block=(2,2),
-            block_norm='L2-Hys',
-            feature_vector=True,
-            channel_axis=None
-        )
+        """Method for encoding image data by flattening them into a vector."""
+        return image.flatten()
 
-        logger.debug(f"HOG features shape: {hog_features.shape}")
-        return hog_features
+    # def encode_image(self, image: np.ndarray) -> np.ndarray:
+    #     """Method for encoding image data by using HOG (Histogram of Oriented Gradients) approach."""
+    #     hog_features = hog(
+    #         image,
+    #         orientations=9,
+    #         pixels_per_cell=(8,8),
+    #         cells_per_block=(2,2),
+    #         block_norm='L2-Hys',
+    #         feature_vector=True,
+    #         channel_axis=None
+    #     )
+
+    #     logger.debug(f"HOG features shape: {hog_features.shape}")
+    #     return hog_features
 
 
 class TextEncoder:
@@ -246,7 +203,7 @@ class FeatureExtractor:
         # Process data if not in load mode
         if not load_flag:
             self._process_image_text_pairs()
-            self.dimensionality_reduction()
+            # self.dimensionality_reduction()
             self.save_embeddings(
                 image_embeddings_path=image_embeddings_path,
                 text_embeddings_path=text_embeddings_path
@@ -257,25 +214,25 @@ class FeatureExtractor:
                 text_embeddings_path=text_embeddings_path
             )
 
-    def dimensionality_reduction(self, latent_dim: int = 400):
-        """Method for dimensionality reduction."""
-        if not self.image_embeddings_list or not self.text_embeddings_list:
-            raise ValueError("Image and text embeddings must be loaded first.")
+    # def dimensionality_reduction(self, latent_dim: int = 400):
+    #     """Method for dimensionality reduction."""
+    #     if not self.image_embeddings_list or not self.text_embeddings_list:
+    #         raise ValueError("Image and text embeddings must be loaded first.")
 
-        image_embeddings_matrix = np.array(self.image_embeddings_list)
+    #     image_embeddings_matrix = np.array(self.image_embeddings_list)
 
-        if image_embeddings_matrix.shape[1] > latent_dim:
-            pca_image = PCA(n_components=latent_dim)
-            self.reduced_image_embeddings_list = pca_image.fit_transform(image_embeddings_matrix)
-        else:
-            self.reduced_image_embeddings_list = image_embeddings_matrix
+    #     if image_embeddings_matrix.shape[1] > latent_dim:
+    #         pca_image = PCA(n_components=latent_dim)
+    #         self.reduced_image_embeddings_list = pca_image.fit_transform(image_embeddings_matrix)
+    #     else:
+    #         self.reduced_image_embeddings_list = image_embeddings_matrix
 
-        logger.debug(f"Reduced image embeddings shape: {self.reduced_image_embeddings_list.shape}")
+    #     logger.debug(f"Reduced image embeddings shape: {self.reduced_image_embeddings_list.shape}")
 
     def save_embeddings(self, image_embeddings_path: str, text_embeddings_path: str) -> None:
         """Method for saving embeddings."""
         try:
-            image_embeddings_matrix = np.asarray(self.reduced_image_embeddings_list)
+            image_embeddings_matrix = np.asarray(self.image_embeddings_list)
             text_embeddings_matrix = np.asarray(self.text_embeddings_list)
 
             Path(image_embeddings_path).parent.mkdir(parents=True, exist_ok=True)
@@ -291,7 +248,7 @@ class FeatureExtractor:
     def _load_embeddings(self, image_embeddings_path: str, text_embeddings_path: str) -> None:
         """Method for loading embeddings."""
         try:
-            self.reduced_image_embeddings_list = np.load(f"{image_embeddings_path}.npz")["image"]
+            self.image_embeddings_list = np.load(f"{image_embeddings_path}.npz")["image"]
             self.text_embeddings_list = np.load(f"{text_embeddings_path}.npz")["text"]
 
             logger.info(f"Embeddings loaded from {image_embeddings_path} and {text_embeddings_path} successfully.")
@@ -349,16 +306,6 @@ def main() -> None:
             load_flag=False
         )
 
-        # summary = feature_extractor.get_data_summary()
-        # logger.info(f"Data summary: {summary}")
-
-        # print(feature_extractor.image_embeddings_list[0].shape)
-        # print(feature_extractor.text_embeddings_list[0].shape)
-
-        # print(*feature_extractor.image_embeddings_list)
-        # print(*feature_extractor.text_embeddings_list)
-
-        # logger.info(f"Number of text_image pairs: {len(feature_extractor.image_embeddings_list) if len(feature_extractor.image_embeddings_list) == len(feature_extractor.text_embeddings_list) else None}")
     except Exception as e:
         logger.error(f"Error in main function: {e}")
         logger.exception("Detailed traceback:")
