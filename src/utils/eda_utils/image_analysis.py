@@ -35,23 +35,3 @@ def analyze_channel_distribution(df: pd.DataFrame, img_dir: str) -> pd.Series:
     """Return counts of image modes across dataset."""
     df["image_mode"] = df["Filenames"].apply(lambda f: check_channels(f, img_dir))
     return df["image_mode"].value_counts()
-
-
-def calculate_thickness_outliers(df: pd.DataFrame) -> float:
-    """Returns the % of images with thickness outside the IQR."""
-    Q1 = df["thickness"].quantile(0.25)
-    Q3 = df["thickness"].quantile(0.75)
-    IQR = Q3 - Q1
-
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-
-    outliers = (df["thickness"] < lower_bound) | (df["thickness"] > upper_bound)
-    num_outliers = outliers.sum()
-    total = len(df)
-    percentage = (num_outliers / total) * 100
-
-    print(f"Number of outliers: {num_outliers} з {total}")
-    print(f"Percentage of outliers : {percentage:.2f}%")
-
-    return percentage

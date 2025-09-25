@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 class IntefaceLoader(ABC):
-    """Inerface for all data loader"""
+    """Inerface for all data loader(from prviders)"""
 
     @abstractmethod
     def download_dataset(self, dataset: str) -> Path:

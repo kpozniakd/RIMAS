@@ -49,3 +49,12 @@ def analyze_diacritics(lowercase_letters: Dict[str, int]) -> None:
     total_dia = sum(dia.values())
     total = total_basic + total_dia
     print(f"\n% of lowercase letters with diacritics: {total_dia / total * 100:.2f}%")
+
+
+def get_num_of_chars(df: pd.DataFrame) -> set:
+    """Return a number of unique characters found in df['label']."""
+    letters = set()
+    for word in df["Contents"]:
+        for letter in word:
+            letters.add(letter)
+    return len(letters)

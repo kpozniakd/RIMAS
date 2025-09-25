@@ -190,3 +190,30 @@ def compare_croped_img(words_df, words_df_normalized, i: int):
 
     plt.tight_layout()
     plt.show()
+
+
+def check_images_with_duplcated_text(df: pd.DataFrame, img_dir: str):
+    duplicated_texts = df[df.duplicated("Contents", keep=False)]
+    example_texts = (
+        duplicated_texts["Contents"]
+        .value_counts()
+        .loc[lambda x: x > 1]
+        .head(1)
+        .index.tolist()
+    )
+    for text in example_texts:
+        subset = duplicated_texts[duplicated_texts["Contents"] == text]
+        print(f"\nText: '{text}' - {len(subset)}")
+        plt.figure(figsize=(15, 3))
+        for i, (_, row) in enumerate(subset.iterrows()):
+            if i >= 5:
+                break
+            img_path = os.path.join(img_dir, row["Filenames"])
+            img = Image.open(img_path)
+            plt.subplot(1, 5, i + 1)
+            plt.imshow(img, cmap="gray")
+            plt.title(f"{row['Filenames']}", fontsize=8)
+            plt.axis("off")
+        plt.suptitle(f'Images with the same text:\n"{text}"', fontsize=12)
+        plt.tight_layout()
+        plt.show()

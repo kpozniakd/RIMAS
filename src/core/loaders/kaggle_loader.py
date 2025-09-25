@@ -1,14 +1,16 @@
 import os
 from pathlib import Path
-from src.core_new.settings import settings
+from src.core.settings import settings
 from .inteface_loader import IntefaceLoader
 
 
 class KaggleLoader(IntefaceLoader):
+    """Loader for downloading Kaggle datasets"""
+
     def __init__(self) -> None:
         os.environ.setdefault("KAGGLE_USERNAME", settings.KAGGLE_USERNAME)
         os.environ.setdefault("KAGGLE_KEY", settings.KAGGLE_KEY)
-        from kaggle.api.kaggle_api_extended import KaggleApi
+        from kaggle.api.kaggle_api_extended import KaggleApi  # Kaggle provider
 
         self.api = KaggleApi()
         self.api.authenticate()

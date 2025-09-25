@@ -1,4 +1,4 @@
-from src.core_new.loaders.kaggle_loader import KaggleLoader
+from src.core.loaders.kaggle_loader import KaggleLoader
 
 
 def main():
