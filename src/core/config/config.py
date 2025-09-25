@@ -8,14 +8,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 @dataclass
 class Config:
     # Paths
-    TRAIN_CSV_PATH: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/train_labels.csv"
-    TEST_CSV_PATH: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/test_labels.csv"
-    TRAIN_IMG_DIR: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/Images"
-    TEST_IMG_DIR: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/Images"
+    TRAIN_CSV_PATH: Path = (
+        BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/train_labels.csv"
+    )
+    TEST_CSV_PATH: Path = (
+        BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/test_labels.csv"
+    )
+    TRAIN_IMG_DIR: Path = (
+        BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/Images"
+    )
+    TEST_IMG_DIR: Path = (
+        BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/Images"
+    )
     OUTPUT_WORD_CSV_PATH: Path = BASE_DIR / "data/processed"
 
-    IMAGE_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/words/weights/image_embeddings.npz"
-    TEXT_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/words/weights/text_embeddings.npz"
+    IMAGE_EMBEDDINGS_PATH: Path = (
+        BASE_DIR / "data/processed/words/weights/image_embeddings.npz"
+    )
+    TEXT_EMBEDDINGS_PATH: Path = (
+        BASE_DIR / "data/processed/words/weights/text_embeddings.npz"
+    )
     WORD_TEXT_PATH: Path = BASE_DIR / "data/processed/weights/word_text"
     WORD_PARENTS_PATH: Path = BASE_DIR / "data/processed/weights/word_parents"
     WORD_BBOXES_PATH: Path = BASE_DIR / "data/processed/weights/word_bboxes"
@@ -43,6 +55,6 @@ class Config:
 
 
 # if __name__ == "__main__":
-    # config = Config()
-    # print(config.DATASET_PATH)
-    # print(config.TRAIN_CSV_PATH)
+# config = Config()
+# print(config.DATASET_PATH)
+# print(config.TRAIN_CSV_PATH)
