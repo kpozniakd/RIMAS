@@ -5,8 +5,7 @@ import string
 import logging
 from pathlib import Path
 from skimage.feature import hog
-from sklearn.decomposition import PCA
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Literal
 
 import cv2
 import numpy as np
@@ -123,24 +122,47 @@ class ImageEncoder:
     def __init__(self) -> None:
         pass
 
-    def encode_image(self, image: np.ndarray) -> np.ndarray:
+    def flatten_encode_image(self, image: np.ndarray) -> np.ndarray:
         """Method for encoding image data by flattening them into a vector."""
         return image.flatten()
 
-    # def encode_image(self, image: np.ndarray) -> np.ndarray:
-    #     """Method for encoding image data by using HOG (Histogram of Oriented Gradients) approach."""
-    #     hog_features = hog(
-    #         image,
-    #         orientations=9,
-    #         pixels_per_cell=(8,8),
-    #         cells_per_block=(2,2),
-    #         block_norm='L2-Hys',
-    #         feature_vector=True,
-    #         channel_axis=None
-    #     )
+    def hog_encode_image(self, image: np.ndarray) -> np.ndarray:
+        """Method for encoding image data by using HOG (Histogram of Oriented Gradients) approach."""
+        hog_features = hog(
+            image,
+            orientations=9,
+            pixels_per_cell=(8,8),
+            cells_per_block=(2,2),
+            block_norm='L2-Hys',
+            feature_vector=True,
+            channel_axis=None
+        )
 
-    #     logger.debug(f"HOG features shape: {hog_features.shape}")
-    #     return hog_features
+        logger.debug(f"HOG features shape: {hog_features.shape}")
+        return hog_features
+
+    def sift_encode_image(self, image: np.ndarray) -> np.ndarray:
+        """Method for encoding image data by using SIFT (Scale-Invariant Feature Transform)."""
+        try:
+            # Initialize SIFT detector
+            sift = cv2.SIFT_create()
+
+            # Detect keypoints and compute descriptors
+            keypoints, descriptors = sift.detectAndCompute(image, None)
+
+            if descriptors is None:
+                logger.warning("No SIFT features found in the image, returning zero vector")
+                return np.zeros(128, dtype=np.float32)  # SIFT descriptor size = 128
+
+            # Aggregate descriptors (here: average pooling)
+            sift_vector = np.mean(descriptors, axis=0)
+
+            logger.debug(f"SIFT features shape: {sift_vector.shape}")
+            return sift_vector.astype(np.float32)
+
+        except Exception as e:
+            logger.error(f"Error in SIFT encoding: {e}")
+            return np.zeros(128, dtype=np.float32)
 
 
 class TextEncoder:
@@ -185,10 +207,12 @@ class FeatureExtractor:
         target_size: Tuple[int, int],
         image_embeddings_path: str,
         text_embeddings_path: str,
+        encoder_type: Literal["HOG", "Flatten", "SIFT"] = "HOG",
         load_flag: bool = True
     ) -> None:
         self.dataset_path = Path(dataset_path)
         self.target_size = target_size
+        self.encoder_type = encoder_type
 
         # Initialize data storage
         self.image_embeddings_list: List[np.ndarray] = []
@@ -248,8 +272,12 @@ class FeatureExtractor:
                 )
 
                 logger.info(f"Processing text-image pair: {idx}")
-
-                image_embedding = self.image_encoder.encode_image(binary_image)
+                if self.encoder_type == "HOG":
+                    image_embedding = self.image_encoder.hog_encode_image(binary_image)
+                if self.encoder_type == "Flattent":
+                    image_embedding = self.image_encoder.flatten_encode_image(binary_image)
+                if self.encoder_type == "SIFT":
+                    image_embedding = self.image_encoder.sift_encode_image(grey_image)
                 text_embedding = self.text_encoder.encode_text(data_point["text"])
 
                 self.image_embeddings_list.append(image_embedding)
@@ -282,10 +310,14 @@ def main() -> None:
         feature_extractor = FeatureExtractor(
             dataset_path=config.DATASET_PATH,
             target_size=config.TARGET_SIZE,
-            image_embeddings_path=config.IMAGE_EMBEDDINGS_PATH,
+            image_embeddings_path=config.SIFT_IMAGE_EMBEDDINGS_PATH,
             text_embeddings_path=config.TEXT_EMBEDDINGS_PATH,
-            load_flag=False
+            load_flag=True,
+            encoder_type="SIFT"
         )
+
+        print(feature_extractor.image_embeddings_list[:1])
+        print(len(*feature_extractor.image_embeddings_list[:1]))
 
     except Exception as e:
         logger.error(f"Error in main function: {e}")
