@@ -4,8 +4,8 @@ import json
 import string
 import logging
 from pathlib import Path
-from skimage.feature import hog
-from sklearn.decomposition import PCA
+# from skimage.feature import hog
+# from sklearn.decomposition import PCA
 from typing import List, Dict, Tuple
 
 import cv2
