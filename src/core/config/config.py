@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Literal
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -23,10 +23,10 @@ class Config:
     OUTPUT_WORD_CSV_PATH: Path = BASE_DIR / "data/processed"
 
     IMAGE_EMBEDDINGS_PATH: Path = (
-        BASE_DIR / "data/processed/words/weights/image_embeddings.npz"
+        BASE_DIR / "data/processed/words/weights/image_embeddings.parquet"
     )
     TEXT_EMBEDDINGS_PATH: Path = (
-        BASE_DIR / "data/processed/words/weights/text_embeddings.npz"
+        BASE_DIR / "data/processed/words/weights/text_embeddings.parquet"
     )
     WORD_TEXT_PATH: Path = BASE_DIR / "data/processed/weights/word_text"
     WORD_PARENTS_PATH: Path = BASE_DIR / "data/processed/weights/word_parents"
@@ -46,6 +46,7 @@ class Config:
         3,
     )  # rectangular kernel for dilation (merged letters into words)
     DEFAULT_MIN_AREA_RATIO = 0.006  # min. fraction of image area for word outline
+    ENCODER_TYPE: Literal["HOG", "SIFT", "Flatten"] = "SIFT"
 
     # Quality thresholds
     BLANK_STD_THRESHOLD: float = 5

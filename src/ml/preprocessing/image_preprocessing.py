@@ -1,50 +1,73 @@
-from typing import Tuple
-from pathlib import Path
-import numpy as np
+import sys
 import cv2
+import logging
+import numpy as np
+from pathlib import Path
+from typing import Tuple
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent.parent))
 
 
-# refactor from class
-def process_line(self, img_path: Path, label: str, out_dir: Path):
-    pass
+class ImageProcessor:
+    """Handles image processing operations."""
 
+    @staticmethod
+    def apply_morphological_operations(
+        binary_image: np.ndarray, kernel_size: Tuple[int, int] = (2, 2)
+    ) -> np.ndarray:
+        """Apply morphological operations to clean up binary image."""
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel_size)
+        morph = cv2.morphologyEx(
+            binary_image, cv2.MORPH_CLOSE, kernel=kernel, iterations=2
+        )
+        morph = cv2.morphologyEx(morph, cv2.MORPH_OPEN, kernel=kernel, iterations=1)
+        return morph
 
-def load_gray(self, path: Path) -> np.ndarray | None:
-    return cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    @staticmethod
+    def preprocess_image(
+        image_path: str, target_size: Tuple[int, int]
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Load and preprocess raw image."""
+        image = cv2.imread(str(image_path), cv2.IMREAD_UNCHANGED)
 
+        if image is None:
+            raise ValueError(f"Failed to read image: {image_path}")
 
-def prepare_masks(self, gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    bw = self._binarize_invert(gray)
-    dil = self._dilate(bw, self.kernel)
-    cleaned = (dil > 0).astype(np.uint8)
-    return dil, cleaned
+        # Resize image
+        resized_image = cv2.resize(image, target_size, interpolation=cv2.INTER_CUBIC)
 
+        # Convert to grayscale if needed
+        if len(resized_image.shape) == 3 and resized_image.shape[2] == 3:
+            grey = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+        else:
+            grey = resized_image
 
-def find_word_contours(self, dilated: np.ndarray, img_shape: Tuple[int, int]):
-    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    img_area = img_shape[0] * img_shape[1]
-    min_area = img_area * self.min_area_ratio
-    return [c for c in contours if cv2.contourArea(c) >= min_area]
+        # Denoise image
+        denoised_image = cv2.fastNlMeansDenoising(
+            grey, h=20, templateWindowSize=9, searchWindowSize=21
+        )
 
+        # Apply adaptive threshold
+        binary_image = cv2.adaptiveThreshold(
+            denoised_image,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            31,
+            15,
+        )
 
-def binarize_invert(gray: np.ndarray) -> np.ndarray:
-    _, bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    return bw
+        # Apply morphological operations
+        binary_image = ImageProcessor.apply_morphological_operations(binary_image)
 
+        return binary_image, grey
 
-def dilate(bw: np.ndarray, kernel_size: Tuple[int, int]) -> np.ndarray:
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel_size)
-    return cv2.dilate(bw, kernel, iterations=1)
-
-
-def crop_to_content(img: np.ndarray) -> np.ndarray:
-    mask = img < 255
-    if not np.any(mask):
-        return img
-    rows = np.any(mask, axis=1)
-    cols = np.any(mask, axis=0)
-    top = np.argmax(rows)
-    bottom = len(rows) - np.argmax(rows[::-1])
-    left = np.argmax(cols)
-    right = len(cols) - np.argmax(cols[::-1])
-    return img[top:bottom, left:right]
+    @staticmethod
+    def visualize_image(image: np.ndarray, window_name: str = "Image") -> None:
+        """Visualize image in a window."""
+        cv2.imshow(window_name, image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
