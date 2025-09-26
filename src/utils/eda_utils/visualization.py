@@ -71,125 +71,125 @@ def show_sample_images(df: pd.DataFrame, img_dir: str, n: int = 5) -> None:
     plt.show()
 
 
-def analyze_token_lengths(
-    df: pd.DataFrame, processor: TrOCRProcessor, max_length: int = 128
-) -> None:
-    """Plot distribution of tokenized sequence lengths."""
-    token_lengths = df["Contents"].apply(
-        lambda t: len(processor.tokenizer(t).input_ids)
-    )
-    over_limit = (token_lengths > max_length).sum()
+# def analyze_token_lengths(
+#     df: pd.DataFrame, processor: TrOCRProcessor, max_length: int = 128
+# ) -> None:
+#     """Plot distribution of tokenized sequence lengths."""
+#     token_lengths = df["Contents"].apply(
+#         lambda t: len(processor.tokenizer(t).input_ids)
+#     )
+#     over_limit = (token_lengths > max_length).sum()
 
-    plt.hist(token_lengths, bins=30, edgecolor="black")
-    plt.title("Distribution of tokenized text lengths")
-    plt.xlabel("Token count")
-    plt.ylabel("Number of samples")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+#     plt.hist(token_lengths, bins=30, edgecolor="black")
+#     plt.title("Distribution of tokenized text lengths")
+#     plt.xlabel("Token count")
+#     plt.ylabel("Number of samples")
+#     plt.grid(True)
+#     plt.tight_layout()
+#     plt.show()
 
-    print(
-        f"Samples over max_length ({max_length}): {over_limit} / {len(df)} ({over_limit / len(df) * 100:.2f}%)"
-    )
-
-
-def analyze_word_count_type(df: pd.DataFrame) -> None:
-    """Analyze lines that contain one word vs multiple."""
-    df["word_count"] = df["Contents"].apply(lambda x: len(str(x).split()))
-    single = (df["word_count"] == 1).sum()
-    multiple = (df["word_count"] > 1).sum()
-    word_line_distribution(single, multiple)
+#     print(
+#         f"Samples over max_length ({max_length}): {over_limit} / {len(df)} ({over_limit / len(df) * 100:.2f}%)"
+#     )
 
 
-import matplotlib.pyplot as plt
+# def analyze_word_count_type(df: pd.DataFrame) -> None:
+#     """Analyze lines that contain one word vs multiple."""
+#     df["word_count"] = df["Contents"].apply(lambda x: len(str(x).split()))
+#     single = (df["word_count"] == 1).sum()
+#     multiple = (df["word_count"] > 1).sum()
+#     word_line_distribution(single, multiple)
 
 
-def load_and_process_images_from_dir(directory, exts=(".png", ".jpg", ".jpeg")):
-    """Scan a directory for images, binarize each, estimate stroke thickness,
-    and return (filenames, grayscale images, thicknesses)."""
-    filenames, images, thicknesses = [], [], []
-
-    for fname in tqdm(os.listdir(directory), desc="Check images"):
-        if not fname.lower().endswith(exts):
-            continue
-        path = os.path.join(directory, fname)
-        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-        if img is None:
-            continue
-        _, binary = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        thickness = estimate_stroke_thickness(binary)
-        thicknesses.append(thickness)
-        images.append(img)
-        filenames.append(fname)
-
-    return filenames, images, thicknesses
+# import matplotlib.pyplot as plt
 
 
-def estimate_stroke_thickness(binary_img):
-    """Estimate average stroke thickness as (foreground area / skeleton length);
-    auto-inverts if foreground is light on dark."""
-    if binary_img.mean() > 127:
-        binary_img = cv2.bitwise_not(binary_img)
-    binary = (binary_img > 0).astype(np.uint8)
-    skeleton = skeletonize(binary)
-    area_original = np.sum(binary)
-    area_skeleton = np.sum(skeleton)
-    if area_skeleton == 0:
-        return 0
-    return area_original / area_skeleton
+# def load_and_process_images_from_dir(directory, exts=(".png", ".jpg", ".jpeg")):
+#     """Scan a directory for images, binarize each, estimate stroke thickness,
+#     and return (filenames, grayscale images, thicknesses)."""
+#     filenames, images, thicknesses = [], [], []
+
+#     for fname in tqdm(os.listdir(directory), desc="Check images"):
+#         if not fname.lower().endswith(exts):
+#             continue
+#         path = os.path.join(directory, fname)
+#         img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+#         if img is None:
+#             continue
+#         _, binary = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+#         thickness = estimate_stroke_thickness(binary)
+#         thicknesses.append(thickness)
+#         images.append(img)
+#         filenames.append(fname)
+
+#     return filenames, images, thicknesses
 
 
-def plot_top_thickest_lines(img_dir: str, n: int = 5) -> None:
-    """Show N images with thickest lines"""
-    filenames, images, thicknesses = load_and_process_images_from_dir(img_dir)
-    df_lines = pd.DataFrame(
-        {"filename": filenames, "image": images, "thickness": thicknesses}
-    )
-    df_lines["thickness"] = df_lines["image"].apply(estimate_stroke_thickness)
-    df_top = df_lines.sort_values("thickness", ascending=False).head(n)
-
-    plt.figure(figsize=(3 * n, 4))
-    for i, row in enumerate(df_top.itertuples(), 1):
-        plt.subplot(1, n, i)
-        plt.imshow(row.image, cmap="gray")
-        plt.title(f"{row.thickness:.2f}")
-        plt.axis("off")
-    plt.tight_layout()
-    plt.show()
-    Q1 = df_lines["thickness"].quantile(0.25)
-    Q3 = df_lines["thickness"].quantile(0.75)
-    IQR = Q3 - Q1
-
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-
-    outliers = (df_lines["thickness"] < lower_bound) | (
-        df_lines["thickness"] > upper_bound
-    )
-
-    num_outliers = outliers.sum()
-    total = len(df_lines)
-    percentage_outliers = (num_outliers / total) * 100
-
-    print(f"Number of outliers: {num_outliers} з {total}")
-    print(f"% of outliers: {percentage_outliers:.2f}%")
+# def estimate_stroke_thickness(binary_img):
+#     """Estimate average stroke thickness as (foreground area / skeleton length);
+#     auto-inverts if foreground is light on dark."""
+#     if binary_img.mean() > 127:
+#         binary_img = cv2.bitwise_not(binary_img)
+#     binary = (binary_img > 0).astype(np.uint8)
+#     skeleton = skeletonize(binary)
+#     area_original = np.sum(binary)
+#     area_skeleton = np.sum(skeleton)
+#     if area_skeleton == 0:
+#         return 0
+#     return area_original / area_skeleton
 
 
-def compare_croped_img(words_df, words_df_normalized, i: int):
-    """Side-by-side visualization of original vs cropped/normalized word image for index i."""
-    fig, axes = plt.subplots(1, 2)
-    fig.patch.set_facecolor("lightgray")
+# def plot_top_thickest_lines(img_dir: str, n: int = 5) -> None:
+#     """Show N images with thickest lines"""
+#     filenames, images, thicknesses = load_and_process_images_from_dir(img_dir)
+#     df_lines = pd.DataFrame(
+#         {"filename": filenames, "image": images, "thickness": thicknesses}
+#     )
+#     df_lines["thickness"] = df_lines["image"].apply(estimate_stroke_thickness)
+#     df_top = df_lines.sort_values("thickness", ascending=False).head(n)
 
-    axes[0].imshow(words_df["image"].iloc[i], cmap="gray")
-    axes[0].set_title("Original")
-    axes[0].axis("off")
+#     plt.figure(figsize=(3 * n, 4))
+#     for i, row in enumerate(df_top.itertuples(), 1):
+#         plt.subplot(1, n, i)
+#         plt.imshow(row.image, cmap="gray")
+#         plt.title(f"{row.thickness:.2f}")
+#         plt.axis("off")
+#     plt.tight_layout()
+#     plt.show()
+#     Q1 = df_lines["thickness"].quantile(0.25)
+#     Q3 = df_lines["thickness"].quantile(0.75)
+#     IQR = Q3 - Q1
 
-    axes[1].imshow(words_df_normalized["image"].iloc[i], cmap="gray")
-    axes[1].set_title("Croped")
-    axes[1].axis("off")
+#     lower_bound = Q1 - 1.5 * IQR
+#     upper_bound = Q3 + 1.5 * IQR
 
-    plt.tight_layout()
-    plt.show()
+#     outliers = (df_lines["thickness"] < lower_bound) | (
+#         df_lines["thickness"] > upper_bound
+#     )
+
+#     num_outliers = outliers.sum()
+#     total = len(df_lines)
+#     percentage_outliers = (num_outliers / total) * 100
+
+#     print(f"Number of outliers: {num_outliers} з {total}")
+#     print(f"% of outliers: {percentage_outliers:.2f}%")
+
+
+# def compare_croped_img(words_df, words_df_normalized, i: int):
+#     """Side-by-side visualization of original vs cropped/normalized word image for index i."""
+#     fig, axes = plt.subplots(1, 2)
+#     fig.patch.set_facecolor("lightgray")
+
+#     axes[0].imshow(words_df["image"].iloc[i], cmap="gray")
+#     axes[0].set_title("Original")
+#     axes[0].axis("off")
+
+#     axes[1].imshow(words_df_normalized["image"].iloc[i], cmap="gray")
+#     axes[1].set_title("Croped")
+#     axes[1].axis("off")
+
+#     plt.tight_layout()
+#     plt.show()
 
 
 def check_images_with_duplcated_text(df: pd.DataFrame, img_dir: str):

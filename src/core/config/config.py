@@ -41,6 +41,11 @@ class Config:
     # Defaults
     DEFAULT_TOP_N: int = 30
     DEFAULT_IMG_COUNT: int = 5
+    DEFAULT_KERNEL = (
+        29,
+        3,
+    )  # rectangular kernel for dilation (merged letters into words)
+    DEFAULT_MIN_AREA_RATIO = 0.006  # min. fraction of image area for word outline
 
     # Quality thresholds
     BLANK_STD_THRESHOLD: float = 5

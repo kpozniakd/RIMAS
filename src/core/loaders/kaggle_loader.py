@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from src.core.settings import settings
-from .inteface_loader import IntefaceLoader
+from .interface_loader import IntefaceLoader
 
 
 class KaggleLoader(IntefaceLoader):
