@@ -23,10 +23,10 @@ class Config:
     OUTPUT_PROCESSED_DIR: Path = BASE_DIR / "data/processed"
 
     IMAGE_EMBEDDINGS_PATH: Path = (
-        BASE_DIR / "data/processed/words/weights/image_embeddings.parquet"
+        BASE_DIR / "data/processed/words/weights/image_batches"
     )
     TEXT_EMBEDDINGS_PATH: Path = (
-        BASE_DIR / "data/processed/words/weights/text_embeddings.parquet"
+        BASE_DIR / "data/processed/words/weights/text_batches"
     )
     WORD_TEXT_PATH: Path = BASE_DIR / "data/processed/weights/word_text"
     WORD_PARENTS_PATH: Path = BASE_DIR / "data/processed/weights/word_parents"
@@ -47,6 +47,7 @@ class Config:
     )  # rectangular kernel for dilation (merged letters into words)
     DEFAULT_MIN_AREA_RATIO = 0.006  # min. fraction of image area for word outline
     ENCODER_TYPE: Literal["HOG", "SIFT", "Flatten"] = "SIFT"
+    COMPRESSION: str = "snappy"
 
     # Quality thresholds
     BLANK_STD_THRESHOLD: float = 5
@@ -58,6 +59,7 @@ class Config:
     TARGET_HEIGHT: int = 64
     WINDOW_WIDTH: int = 30
     STRIDE_SIZE: int = 10
+    BATCH_SIZE: int = 1000
 
 
 # if __name__ == "__main__":

@@ -18,25 +18,46 @@ class EmbeddingsLoader:
     def __init__(self) -> None:
         pass
 
-    def load_image_embeddings(
+    def load_image_embeddings_from_all_batches(
         self,
-        image_embeddings_path: str
-    ) -> List[Dict[str, List]]:
-        """Method for loading image embeddings from parquet file."""
-        image_embeddings = []
-        if Path(image_embeddings_path).exists():
+        image_embeddings_dir: str,
+        sort_by_id: bool = True,
+        as_dataframe: bool = True,
+    ):
+        """
+        Load all image embeddings from all batches into a sigle instance.
+        """
+        directory = Path(image_embeddings_dir)
+        if not directory.exists():
+            logger.warning(f"Image embeddings directory not found: {directory}")
+            return pd.DataFrame() if as_dataframe else []
+
+        files = sorted(directory.glob("*.parquet"))
+        if not files:
+            logger.warning(f"No parquet files found under {directory}")
+            return pd.DataFrame() if as_dataframe else []
+
+        frames: List[pd.DataFrame] = []
+        for file in files:
             try:
-                image_df = pd.read_parquet(image_embeddings_path, engine="pyarrow")
-                if "image_embedding" not in image_df.columns:
-                    logger.error("image_embedding column not found in the file.")
-                    return []
-
-                image_embeddings = image_df["image_embedding"].apply(lambda x: np.array(x).tolist()).tolist()
-                return image_embeddings
-
+                df = pd.read_parquet(file, engine="pyarrow")
+                frames.append(df)
             except Exception as e:
-                logger.error(f"Error loading image embeddings from {image_embeddings_path}: {e}")
-                return []
-        else:
-            logger.warning(f"Image embeddings file not found: {image_embeddings_path}")
-            return []
+                logger.error(f"Failed to read {file}: {e}")
+
+        if not frames:
+            return pd.DataFrame() if as_dataframe else []
+
+        full = pd.concat(frames, ignore_index=True)
+
+        if sort_by_id and "id" in full.columns:
+            full = full.sort_values("id").reset_index(drop=True)
+
+        if as_dataframe:
+            return full
+
+        if "image_embedding" in full.columns:
+            full["image_embedding"] = full["image_embedding"].apply(
+                lambda x: np.asarray(x, dtype=np.float32).tolist()
+            )
+        return full.to_dict("records")

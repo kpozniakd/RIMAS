@@ -1,3 +1,5 @@
+import os
+import gc
 import sys
 import logging
 import numpy as np
@@ -14,28 +16,46 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingsSaver:
-    """Interface for saving image and text embeddings."""
-    def __init__(self) -> None:
-        pass
+    """Interface for saving image embeddings."""
+    def __init__(self, compression: str = "snappy") -> None:
+        self.compression = compression
 
-    def save_image_embeddings(
+    @staticmethod
+    def _to_table_format(batch_with_image_embeddings: List[Dict]) -> pd.DataFrame:
+        """Convert List[Dict] -> pandas DataFrame."""
+        rows = []
+        for data_point in batch_with_image_embeddings:
+            emb = data_point["image_embedding"]
+            if isinstance(emb, np.ndarray):
+                emb = emb.astype(np.float32).tolist()
+            else:
+                emb = np.asarray(emb, dtype=np.float32).tolist()
+            rows.append({
+                "id": int(data_point["id"]),
+                "label": str(data_point["label"]),
+                "image_path": str(data_point["image_path"]),
+                "image_embedding": emb,
+            })
+        return pd.DataFrame(rows)
+
+    def save_batch_parquet(
         self,
-        image_embeddings_list: List[np.ndarray],
-        data_buffer: List[Dict],
-        image_embeddings_path: str
-    ) -> List[Dict[str, List]]:
-        """Method for saving image embeddings in parquet format."""
-        if Path(image_embeddings_path).exists():
-            image_data = [{
-               "image_embedding": image_embedding,
-               "label": data_point["text"],
-               "image_path": data_point["image_path"]
-            } for image_embedding, data_point in zip(image_embeddings_list, data_buffer)]
-            image_df = pd.DataFrame(image_data)
+        batch_with_image_embeddings: List[Dict],
+        output_dir: str,
+        batch_idx: int
+    ) -> None:
+        """Save image embeddings to parquet files in batches."""
+        out_dir = Path(output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
 
-            Path(image_embeddings_path).parent.mkdir(parents=True, exist_ok=True)
+        if not batch_with_image_embeddings:
+            logger.warning(f"Empty batch #{batch_idx}; skip save.")
+            return
 
-            image_df.to_parquet(image_embeddings_path, engine='pyarrow', compression='snappy')
-            logger.info(f"Image embeddings saved to {image_embeddings_path} successfully.")
-        else:
-            logger.warning(f"Image embeddings file not found: {image_embeddings_path}")
+        df = self._to_table_format(batch_with_image_embeddings)
+        file_path = out_dir / f"part-{batch_idx:05d}.parquet"
+        df.to_parquet(str(file_path), engine="pyarrow", compression=self.compression)
+
+        del df
+        gc.collect()
+        logger.info(f"Image embeddings saved to {file_path} successfully.")
