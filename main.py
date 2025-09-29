@@ -1,12 +1,10 @@
-from pathlib import Path
-from src.core.providers.kaggle_provider import KaggleProvider
+from src.core.loaders.kaggle_loader import KaggleLoader
+
 
 def main():
-    provider = KaggleProvider()
-    provider.download_dataset("yiyueme/dataset-rimes")
-    
+    loader = KaggleLoader()
+    loader.download_dataset("yiyueme/dataset-rimes")
+
 
 if __name__ == "__main__":
     main()
-
-

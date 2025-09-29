@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Literal
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -8,14 +8,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 @dataclass
 class Config:
     # Paths
-    TRAIN_CSV_PATH: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/train_labels.csv"
-    TEST_CSV_PATH: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/test_labels.csv"
-    TRAIN_IMG_DIR: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/Images"
-    TEST_IMG_DIR: Path = BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/Images"
-    OUTPUT_WORD_CSV_PATH: Path = BASE_DIR / "data/processed"
+    TRAIN_CSV_PATH: Path = (
+        BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/train_labels.csv"
+    )
+    TEST_CSV_PATH: Path = (
+        BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/test_labels.csv"
+    )
+    TRAIN_IMG_DIR: Path = (
+        BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Train/Images"
+    )
+    TEST_IMG_DIR: Path = (
+        BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/Images"
+    )
+    OUTPUT_PROCESSED_DIR: Path = BASE_DIR / "data/processed"
 
-    IMAGE_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/words/weights/image_embeddings.npz"
-    TEXT_EMBEDDINGS_PATH: Path = BASE_DIR / "data/processed/words/weights/text_embeddings.npz"
+    IMAGE_EMBEDDINGS_PATH: Path = (
+        BASE_DIR / "data/processed/words/weights/image_batches"
+    )
+    TEXT_EMBEDDINGS_PATH: Path = (
+        BASE_DIR / "data/processed/words/weights/text_batches"
+    )
     WORD_TEXT_PATH: Path = BASE_DIR / "data/processed/weights/word_text"
     WORD_PARENTS_PATH: Path = BASE_DIR / "data/processed/weights/word_parents"
     WORD_BBOXES_PATH: Path = BASE_DIR / "data/processed/weights/word_bboxes"
@@ -29,6 +41,13 @@ class Config:
     # Defaults
     DEFAULT_TOP_N: int = 30
     DEFAULT_IMG_COUNT: int = 5
+    DEFAULT_KERNEL = (
+        29,
+        3,
+    )  # rectangular kernel for dilation (merged letters into words)
+    DEFAULT_MIN_AREA_RATIO = 0.006  # min. fraction of image area for word outline
+    ENCODER_TYPE: Literal["HOG", "SIFT", "Flatten"] = "SIFT"
+    COMPRESSION: str = "snappy"
 
     # Quality thresholds
     BLANK_STD_THRESHOLD: float = 5
@@ -40,9 +59,10 @@ class Config:
     TARGET_HEIGHT: int = 64
     WINDOW_WIDTH: int = 30
     STRIDE_SIZE: int = 10
+    BATCH_SIZE: int = 1000
 
 
 # if __name__ == "__main__":
-    # config = Config()
-    # print(config.DATASET_PATH)
-    # print(config.TRAIN_CSV_PATH)
+# config = Config()
+# print(config.DATASET_PATH)
+# print(config.TRAIN_CSV_PATH)
