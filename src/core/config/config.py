@@ -20,7 +20,7 @@ class Config:
     TEST_IMG_DIR: Path = (
         BASE_DIR / "data/raw/dataset-rimes/RIMES-2011-Lines/Test/Images"
     )
-    OUTPUT_WORD_CSV_PATH: Path = BASE_DIR / "data/processed"
+    OUTPUT_PROCESSED_DIR: Path = BASE_DIR / "data/processed"
 
     IMAGE_EMBEDDINGS_PATH: Path = (
         BASE_DIR / "data/processed/words/weights/image_embeddings.parquet"

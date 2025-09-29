@@ -1,12 +1,14 @@
-from src.core.config.config import Config
 from typing import Tuple, List, Dict
 import json
 from pathlib import Path
 import numpy as np
 import cv2
 import re
-from src.ml.preprocessing.word_image_processing import load_gray
-from src.ml.preprocessing.word_image_segmentation import segment_word_crops
+import logging
+from ml.preprocessing.word_segmenter import WordSegmenter
+
+
+logger = logging.getLogger(__name__)
 
 
 class WordExporter:
@@ -18,13 +20,8 @@ class WordExporter:
         ":": "colon",
     }
 
-    def __init__(
-        self,
-        kernel: Tuple[int, int] = Config.DEFAULT_KERNEL,
-        min_area_ratio: float = Config.DEFAULT_MIN_AREA_RATIO,
-    ) -> None:
-        self.kernel = kernel
-        self.min_area_ratio = min_area_ratio
+    def __init__(self, segmenter: WordSegmenter) -> None:
+        self.segmenter = segmenter
 
     @staticmethod
     def _only_symbols(s: str) -> bool:
@@ -57,11 +54,8 @@ class WordExporter:
         for row in df.itertuples(index=False):
             rel = getattr(row, "Filenames", None)
             text = getattr(row, "Contents", "")
-            if not rel:
-                continue
-
             img_path = (img_root / rel) if img_root else Path(rel)
-            pairs = self.process_line(img_path, text)
+            pairs = self.segmenter.process_line(img_path, text)
             if pairs:
                 saved = self.save_word_pairs(pairs, out_dir)
                 words_json["words"].extend(
@@ -69,7 +63,7 @@ class WordExporter:
                 )
                 total += len(saved)
 
-        with open(out_dir / "words.json", "w", encoding="utf-8") as jf:
+        with open(out_dir / "words" / "words.json", "w", encoding="utf-8") as jf:
             json.dump(words_json, jf, ensure_ascii=False, indent=2)
 
         print(f"Done! Word images saved: {total} Folder: {out_dir / 'words'}")
@@ -79,7 +73,7 @@ class WordExporter:
         word_pairs: List[Tuple["np.ndarray", str]],
         out_dir: Path,
     ) -> List[Tuple[Path, str]]:
-        words_dir = out_dir / "words"
+        words_dir = out_dir / "words" / "word"
         words_dir.mkdir(parents=True, exist_ok=True)
 
         saved: List[Tuple[Path, str]] = []
@@ -95,23 +89,3 @@ class WordExporter:
             saved.append((out_path.resolve(), label))
 
         return saved
-
-    def process_line(
-        self, img_path: Path, line_text: str
-    ) -> List[Tuple[np.ndarray, str]]:
-        gray = load_gray(img_path)
-        if gray is None:
-            print(f"[WARN] Can't read image: {img_path}")
-            return []
-
-        word_pairs = segment_word_crops(
-            gray,
-            line_text,
-            kernel=self.kernel,
-            min_area_ratio=self.min_area_ratio,
-        )
-        if not word_pairs:
-            print(f"[INFO] Skip: no contours or token mismatch — {img_path}")
-            return []
-
-        return word_pairs
